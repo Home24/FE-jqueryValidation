@@ -11,7 +11,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git://github.com/jzaefferer/jquery-validation.git"
+		"url": "git://github.com/serhiiteplov-home24/jquery-validation.git"
 	},
 	"bugs": {
 		"url": "https://github.com/jzaefferer/jquery-validation/issues"
