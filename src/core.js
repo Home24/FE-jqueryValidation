@@ -127,7 +127,7 @@ $.extend($.fn, {
 			existingRules = $.validator.staticRules( element );
 			switch ( command ) {
 			case "add":
-				$.extend( existingRules, $.validator.normalizeRule( argument ) );
+				$.extend( existingRules, $.validator.normalizeRule( typeof argument === "string" ? argument : $.extend(true, {}, argument ) ) );
 				// remove messages from rules, but allow them to be set separately
 				delete existingRules.messages;
 				staticRules[ element.name ] = existingRules;
@@ -155,9 +155,9 @@ $.extend($.fn, {
 		data = $.validator.normalizeRules(
 		$.extend(
 			{},
-			$.validator.classRules( element ),
-			$.validator.attributeRules( element ),
-			$.validator.dataRules( element ),
+			$.validator.normalizeRule($.validator.classRules( element )),
+			$.validator.normalizeRule($.validator.attributeRules( element )),
+			$.validator.normalizeRule($.validator.dataRules( element )),
 			$.validator.staticRules( element )
 		), element );
 
@@ -296,9 +296,9 @@ $.extend( $.validator, {
 		},
 		highlight: function( element, errorClass, validClass ) {
 			if ( element.type === "radio" ) {
-				this.findByName( element.name ).addClass( errorClass ).removeClass( validClass );
+				this.findByName( element.name ).removeClass( validClass ).addClass( errorClass );
 			} else {
-				$( element ).addClass( errorClass ).removeClass( validClass );
+				$( element ).removeClass( validClass ).addClass( errorClass );
 			}
 		},
 		unhighlight: function( element, errorClass, validClass ) {
@@ -321,10 +321,8 @@ $.extend( $.validator, {
 		email: "Please enter a valid email address.",
 		url: "Please enter a valid URL.",
 		date: "Please enter a valid date.",
-		dateISO: "Please enter a valid date ( ISO ).",
 		number: "Please enter a valid number.",
 		digits: "Please enter only digits.",
-		creditcard: "Please enter a valid credit card number.",
 		equalTo: "Please enter the same value again.",
 		maxlength: $.validator.format( "Please enter no more than {0} characters." ),
 		minlength: $.validator.format( "Please enter at least {0} characters." ),
@@ -363,6 +361,18 @@ $.extend( $.validator, {
 			$.each( rules, function( key, value ) {
 				rules[ key ] = $.validator.normalizeRule( value );
 			});
+
+			if ( typeof this.settings.errorClass === "string" ) {
+				this.settings.errorClass = {
+					error: this.settings.errorClass
+				};
+			}
+
+			if ( typeof this.settings.validClass === "string" ) {
+				this.settings.validClass = {
+					error: this.settings.validClass
+				};
+			}
 
 			function delegate( event ) {
 				var validator = $.data( this[ 0 ].form, "validator" ),
@@ -453,7 +463,8 @@ $.extend( $.validator, {
 				for ( var name in errors ) {
 					this.errorList.push({
 						message: errors[ name ],
-						element: this.findByName( name )[ 0 ]
+						element: this.findByName( name )[ 0 ],
+						validationType: "error"
 					});
 				}
 				// remove items from success list
@@ -477,17 +488,20 @@ $.extend( $.validator, {
 			this.lastElement = null;
 			this.prepareForm();
 			this.hideErrors();
-			var i, elements = this.elements()
+			var i, errorClass = "",
+				elements = this.elements()
 				.removeData( "previousValue" )
 				.removeAttr( "aria-invalid" );
-
+			$.each(this.settings.errorClass, function(name, value) {
+				errorClass += " " + value;
+			});
 			if ( this.settings.unhighlight ) {
 				for ( i = 0; elements[ i ]; i++ ) {
 					this.settings.unhighlight.call( this, elements[ i ],
-						this.settings.errorClass, "" );
+						errorClass, "" );
 				}
 			} else {
-				elements.removeClass( this.settings.errorClass );
+				elements.removeClass( errorClass );
 			}
 		},
 
@@ -519,7 +533,9 @@ $.extend( $.validator, {
 		},
 
 		size: function() {
-			return this.errorList.length;
+			return $.grep( this.errorList, function( element ) {
+				return ( element.validationType === "error" );
+			}).length;
 		},
 
 		focusInvalid: function() {
@@ -572,8 +588,14 @@ $.extend( $.validator, {
 		},
 
 		errors: function() {
-			var errorClass = this.settings.errorClass.split( " " ).join( "." );
-			return $( this.settings.errorElement + "." + errorClass, this.errorContext );
+			var _this = this,
+				selector = "";
+			$.each(this.settings.errorClass, function(errorName, errorValue) {
+				var errorClass = errorValue.split( " " ).join( "." );
+				selector += ", " + _this.settings.errorElement + "." + errorClass;
+			});
+			selector = selector.slice(1);
+			return $( selector, this.errorContext );
 		},
 
 		reset: function() {
@@ -625,7 +647,7 @@ $.extend( $.validator, {
 				result, method, rule;
 
 			for ( method in rules ) {
-				rule = { method: method, parameters: rules[ method ] };
+				rule = { method: method, validationType: rules[ method ].validationType || "error", parameters: rules[ method ].rule };
 				try {
 
 					result = $.validator.methods[ method ].call( this, val, element, rule.parameters );
@@ -645,7 +667,11 @@ $.extend( $.validator, {
 
 					if ( !result ) {
 						this.formatAndAdd( element, rule );
-						return false;
+						if (rule.validationType === "error" ) {
+							return false;
+						} else {
+							return true;
+						}
 					}
 				} catch ( e ) {
 					if ( this.settings.debug && window.console ) {
@@ -713,7 +739,8 @@ $.extend( $.validator, {
 			this.errorList.push({
 				message: message,
 				element: element,
-				method: rule.method
+				method: rule.method,
+				validationType: rule.validationType
 			});
 
 			this.errorMap[ element.name ] = message;
@@ -728,25 +755,36 @@ $.extend( $.validator, {
 		},
 
 		defaultShowErrors: function() {
-			var i, elements, error;
+			var i, elements, error, errorClass = "", validClass = "";
+
+			$.each(this.settings.errorClass, function(name, value) {
+				errorClass += " " + value;
+			});
+			$.each(this.settings.validClass, function(name, value) {
+				validClass += " " + value;
+			});
+			errorClass = errorClass.slice(1);
+			validClass = validClass.slice(1);
+
 			for ( i = 0; this.errorList[ i ]; i++ ) {
 				error = this.errorList[ i ];
 				if ( this.settings.highlight ) {
-					this.settings.highlight.call( this, error.element, this.settings.errorClass, this.settings.validClass );
+					this.settings.highlight.call( this, error.element, (this.settings.errorClass[ error.validationType ]) ? this.settings.errorClass[ error.validationType ] : this.settings.errorClass.error, validClass);
 				}
-				this.showLabel( error.element, error.message );
+				this.showLabel( error.element, (this.settings.errorClass[ error.validationType ]) ? this.settings.errorClass[ error.validationType ] : this.settings.errorClass.error, validClass, error.message );
 			}
 			if ( this.errorList.length ) {
 				this.toShow = this.toShow.add( this.containers );
 			}
+
 			if ( this.settings.success ) {
 				for ( i = 0; this.successList[ i ]; i++ ) {
-					this.showLabel( this.successList[ i ] );
+					this.showLabel( this.successList[ i ], errorClass, validClass);
 				}
 			}
 			if ( this.settings.unhighlight ) {
 				for ( i = 0, elements = this.validElements(); elements[ i ]; i++ ) {
-					this.settings.unhighlight.call( this, elements[ i ], this.settings.errorClass, this.settings.validClass );
+					this.settings.unhighlight.call( this, elements[ i ], errorClass, validClass );
 				}
 			}
 			this.toHide = this.toHide.not( this.toShow );
@@ -764,21 +802,21 @@ $.extend( $.validator, {
 			});
 		},
 
-		showLabel: function( element, message ) {
+		showLabel: function( element, errorClass, validClass, message ) {
 			var place, group, errorID,
 				error = this.errorsFor( element ),
 				elementID = this.idOrName( element ),
 				describedBy = $( element ).attr( "aria-describedby" );
 			if ( error.length ) {
 				// refresh error/success class
-				error.removeClass( this.settings.validClass ).addClass( this.settings.errorClass );
+				error.removeClass( validClass ).addClass( errorClass );
 				// replace message on existing label
 				error.html( message );
 			} else {
 				// create error element
 				error = $( "<" + this.settings.errorElement + ">" )
 					.attr( "id", elementID + "-error" )
-					.addClass( this.settings.errorClass )
+					.addClass( errorClass )
 					.html( message || "" );
 
 				// Maintain reference to the element to be placed into the DOM
@@ -941,14 +979,12 @@ $.extend( $.validator, {
 	},
 
 	classRuleSettings: {
-		required: { required: true },
-		email: { email: true },
-		url: { url: true },
-		date: { date: true },
-		dateISO: { dateISO: true },
-		number: { number: true },
-		digits: { digits: true },
-		creditcard: { creditcard: true }
+		required: { required: { rule: true, validationType: "error" } },
+		email: { email: { rule: true, validationType: "error" } },
+		url: { url: { rule: true, validationType: "error" } },
+		date: { date: { rule: true, validationType: "error" } },
+		number: { number: { rule: true, validationType: "error" } },
+		digits: { digits: { rule: true, validationType: "error" } }
 	},
 
 	addClassRules: function( className, rules ) {
@@ -1043,6 +1079,7 @@ $.extend( $.validator, {
 	normalizeRules: function( rules, element ) {
 		// handle dependency check
 		$.each( rules, function( prop, val ) {
+			val = val.rule;
 			// ignore rule when param is explicitly false, eg. required:false
 			if ( val === false ) {
 				delete rules[ prop ];
@@ -1059,7 +1096,7 @@ $.extend( $.validator, {
 					break;
 				}
 				if ( keepRule ) {
-					rules[ prop ] = val.param !== undefined ? val.param : true;
+					rules[ prop ].rule = val.param !== undefined ? val.param : true;
 				} else {
 					delete rules[ prop ];
 				}
@@ -1067,37 +1104,44 @@ $.extend( $.validator, {
 		});
 
 		// evaluate parameters
-		$.each( rules, function( rule, parameter ) {
-			rules[ rule ] = $.isFunction( parameter ) ? parameter( element ) : parameter;
+		$.each( rules, function( rule, val ) {
+			var parameter = val.rule;
+			rules[ rule ].rule = $.isFunction( parameter ) ? parameter( element ) : parameter;
 		});
 
 		// clean number parameters
 		$.each([ "minlength", "maxlength" ], function() {
-			if ( rules[ this ] ) {
-				rules[ this ] = Number( rules[ this ] );
+			if ( rules[ this ] && rules [ this ].rule) {
+				rules[ this ].rule = Number( rules[ this ].rule);
 			}
 		});
 		$.each([ "rangelength", "range" ], function() {
 			var parts;
-			if ( rules[ this ] ) {
-				if ( $.isArray( rules[ this ] ) ) {
-					rules[ this ] = [ Number( rules[ this ][ 0 ]), Number( rules[ this ][ 1 ] ) ];
-				} else if ( typeof rules[ this ] === "string" ) {
-					parts = rules[ this ].replace(/[\[\]]/g, "" ).split( /[\s,]+/ );
-					rules[ this ] = [ Number( parts[ 0 ]), Number( parts[ 1 ] ) ];
+			if ( rules[ this ] && rules [ this ].rule) {
+				if ( $.isArray( rules[ this ].rule ) ) {
+					rules[ this ].rule = [ Number( rules[ this ].rule[ 0 ]), Number( rules[ this ].rule[ 1 ] ) ];
+				} else if ( typeof rules[ this ].rule === "string" ) {
+					parts = rules[ this ].rule.replace(/[\[\]]/g, "" ).split( /[\s,]+/ );
+					rules[ this ].rule = [ Number( parts[ 0 ]), Number( parts[ 1 ] ) ];
 				}
 			}
 		});
 
 		if ( $.validator.autoCreateRanges ) {
 			// auto-create ranges
-			if ( rules.min != null && rules.max != null ) {
-				rules.range = [ rules.min, rules.max ];
+			if ( rules.min != null && rules.max != null && rules.min.validationType === rules.max.validationType) {
+				rules.range = {
+					rule: [ rules.min.rule, rules.max.rule ],
+					validationType: rules.max.validationType
+				};
 				delete rules.min;
 				delete rules.max;
 			}
-			if ( rules.minlength != null && rules.maxlength != null ) {
-				rules.rangelength = [ rules.minlength, rules.maxlength ];
+			if ( rules.minlength != null && rules.maxlength != null && rules.minlength.validationType === rules.maxlength.validationType) {
+				rules.rangelength = {
+					rule: [ rules.minlength.rule, rules.maxlength.rule ],
+					validationType: rules.maxlength.validationType
+				};
 				delete rules.minlength;
 				delete rules.maxlength;
 			}
@@ -1114,6 +1158,17 @@ $.extend( $.validator, {
 				transformed[ this ] = true;
 			});
 			data = transformed;
+		}
+
+		if ( typeof data !== "undefined") {
+			$.each(data, function(rule, value) {
+				if (typeof value.rule === "undefined" && typeof value.validationType === "undefined" && value.messages !== "undefined") {
+					data[ rule ] = {
+						rule: value,
+						validationType: "error"
+					};
+				}
+			});
 		}
 		return data;
 	},
@@ -1166,57 +1221,14 @@ $.extend( $.validator, {
 			return this.optional( element ) || !/Invalid|NaN/.test( new Date( value ).toString() );
 		},
 
-		// http://jqueryvalidation.org/dateISO-method/
-		dateISO: function( value, element ) {
-			return this.optional( element ) || /^\d{4}[\/\-](0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])$/.test( value );
-		},
-
 		// http://jqueryvalidation.org/number-method/
 		number: function( value, element ) {
-		    return this.optional( element ) || /^(?:-?\d+|-?\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/.test( value );
+			return this.optional( element ) || /^(?:-?\d+|-?\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/.test( value );
 		},
 
 		// http://jqueryvalidation.org/digits-method/
 		digits: function( value, element ) {
 			return this.optional( element ) || /^\d+$/.test( value );
-		},
-
-		// http://jqueryvalidation.org/creditcard-method/
-		// based on http://en.wikipedia.org/wiki/Luhn_algorithm
-		creditcard: function( value, element ) {
-			if ( this.optional( element ) ) {
-				return "dependency-mismatch";
-			}
-			// accept only spaces, digits and dashes
-			if ( /[^0-9 \-]+/.test( value ) ) {
-				return false;
-			}
-			var nCheck = 0,
-				nDigit = 0,
-				bEven = false,
-				n, cDigit;
-
-			value = value.replace( /\D/g, "" );
-
-			// Basing min and max length on
-			// http://developer.ean.com/general_info/Valid_Credit_Card_Types
-			if ( value.length < 13 || value.length > 19 ) {
-				return false;
-			}
-
-			for ( n = value.length - 1; n >= 0; n--) {
-				cDigit = value.charAt( n );
-				nDigit = parseInt( cDigit, 10 );
-				if ( bEven ) {
-					if ( ( nDigit *= 2 ) > 9 ) {
-						nDigit -= 9;
-					}
-				}
-				nCheck += nDigit;
-				bEven = !bEven;
-			}
-
-			return ( nCheck % 10 ) === 0;
 		},
 
 		// http://jqueryvalidation.org/minlength-method/
@@ -1290,7 +1302,9 @@ $.extend( $.validator, {
 			validator = this;
 			this.startRequest( element );
 			data = {};
-			data[ element.name ] = value;
+			if (!param.data) {
+				data[ element.name ] = value;
+			}
 			$.ajax( $.extend( true, {
 				url: param,
 				mode: "abort",
@@ -1299,7 +1313,7 @@ $.extend( $.validator, {
 				data: data,
 				context: validator.currentForm,
 				success: function( response ) {
-					var valid = response === true || response === "true",
+					var valid = response.valid === true,
 						errors, message, submitted;
 
 					validator.settings.messages[ element.name ].remote = previous.originalMessage;
@@ -1312,7 +1326,7 @@ $.extend( $.validator, {
 						validator.showErrors();
 					} else {
 						errors = {};
-						message = response || validator.defaultMessage( element, "remote" );
+						message = response.message || validator.defaultMessage( element, "remote" );
 						errors[ element.name ] = previous.message = $.isFunction( message ) ? message( value ) : message;
 						validator.invalid[ element.name ] = true;
 						validator.showErrors( errors );

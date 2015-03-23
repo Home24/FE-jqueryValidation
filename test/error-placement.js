@@ -61,13 +61,15 @@ test( "error containers, simple", function() {
 			message: "bar",
 			element: {
 				name: "foo"
-			}
+			},
+            validationType: "error"
 		},
 		{
 			message: "necessary",
 			element: {
 				name: "required"
-			}
+			},
+            validationType: "error"
 		}
 	];
 
@@ -110,14 +112,16 @@ test( "error containers, with labelcontainer I", function() {
 			message: "bar",
 			element: {
 				name: "foo"
-			}
+			},
+            validationType: "error"
 		},
 		{
 			name: "required",
 			message: "necessary",
 			element: {
 				name: "required"
-			}
+			},
+            validationType: "error"
 		}
 	];
 

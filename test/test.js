@@ -16,7 +16,7 @@ $.mockjax({
 	data: {
 		username: /Peter2?|asdf/
 	},
-	responseText: "false",
+	responseText: { valid: false },
 	responseStatus: 200,
 	responseTime: 1
 });
@@ -26,7 +26,7 @@ $.mockjax({
 	data: {
 		username: "asdf"
 	},
-	responseText: "\"asdf is already taken, please try something else\"",
+	responseText: { valid: false, message: "asdf is already taken, please try something else" },
 	responseStatus: 200,
 	responseTime: 1
 });
@@ -111,7 +111,8 @@ test( "valid() ???", function() {
 			{
 				name: "meal",
 				message: "foo",
-				element: $( "#meal" )[ 0 ]
+				element: $( "#meal" )[ 0 ],
+                validationType: "error"
 			}
 		],
 		v = $( "#testForm3" ).validate();
@@ -1403,7 +1404,7 @@ test( "correct checkbox receives the error", function() {
 		v;
 
 	$( "#check1b" ).attr( "checked", false );
-	v = $( "#form" ).find( "[type=checkbox]" ).attr( "checked", false ).end().validate({
+	v = $( "#form" ).find( "[validationType=checkbox]" ).attr( "checked", false ).end().validate({
 		rules: {
 			check: {
 				required: true,
