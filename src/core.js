@@ -324,12 +324,16 @@ $.extend( $.validator, {
 		number: "Please enter a valid number.",
 		digits: "Please enter only digits.",
 		equalTo: "Please enter the same value again.",
-		maxlength: $.validator.format( "Please enter no more than {0} characters." ),
-		minlength: $.validator.format( "Please enter at least {0} characters." ),
+        matchesInput: "Please enter the same value again.",
+		maxLength: $.validator.format( "Please enter no more than {0} characters." ),
+		minLength: $.validator.format( "Please enter at least {0} characters." ),
 		rangelength: $.validator.format( "Please enter a value between {0} and {1} characters long." ),
 		range: $.validator.format( "Please enter a value between {0} and {1}." ),
 		max: $.validator.format( "Please enter a value less than or equal to {0}." ),
-		min: $.validator.format( "Please enter a value greater than or equal to {0}." )
+		min: $.validator.format( "Please enter a value greater than or equal to {0}." ),
+        blacklist: $.validator.format( "Please select a different address." ),
+        pattern: $.validator.format( "Invalid format." ),
+        blacklistPattern: $.validator.format( "Please select a different address." )
 	},
 
 	autoCreateRanges: false,
@@ -925,7 +929,7 @@ $.extend( $.validator, {
 		},
 
 		depend: function( param, element ) {
-			return this.dependTypes[typeof param] ? this.dependTypes[typeof param]( param, element ) : true;
+			return this.dependTypes[ typeof param ] ? this.dependTypes[ typeof param ]( param, element ) : true;
 		},
 
 		dependTypes: {
@@ -974,8 +978,46 @@ $.extend( $.validator, {
 				valid: true,
 				message: this.defaultMessage( element, "remote" )
 			});
-		}
+		},
 
+        isCorrectRexExp: function(pattern) {
+            var myPattern = pattern.split("/"),
+                myRegexOptions;
+            myPattern.shift();
+            myRegexOptions = myPattern.pop();
+
+            return myRegexOptions !== "u";
+        },
+
+        /**
+         * Convert php regex string to js regex Object
+         *
+         * @param {String} pString
+         * @return {String}
+         */
+        convertPhpRegExp: function(pString) {
+            var myRegEx, myPattern, myRegexOptions;
+
+            if (pString.constructor === RegExp) {
+                return pString;
+            }
+            myPattern = pString.split("/");
+            myPattern.shift(); // cutoff first empty string
+            myRegexOptions = myPattern.pop(); // last array entry = options
+            myPattern = myPattern.join("/"); // reassemble regex string
+
+            if (myRegexOptions === "u") {
+                myRegexOptions = null;
+            }
+
+            try { // catch misformed regex pattern
+                myRegEx = myRegexOptions && myRegexOptions.length > 0 ? (new RegExp(myPattern, myRegexOptions)) : (new RegExp(myPattern));
+            } catch (e) {
+                myRegEx = new RegExp(".*"); // always returns true
+            }
+
+            return myRegEx; // return regex
+        }
 	},
 
 	classRuleSettings: {
@@ -1046,9 +1088,9 @@ $.extend( $.validator, {
 			}
 		}
 
-		// maxlength may be returned as -1, 2147483647 ( IE ) and 524288 ( safari ) for text inputs
-		if ( rules.maxlength && /-1|2147483647|524288/.test( rules.maxlength ) ) {
-			delete rules.maxlength;
+		// maxLength may be returned as -1, 2147483647 ( IE ) and 524288 ( safari ) for text inputs
+		if ( rules.maxLength && /-1|2147483647|524288/.test( rules.maxLength ) ) {
+			delete rules.maxLength;
 		}
 
 		return rules;
@@ -1110,7 +1152,7 @@ $.extend( $.validator, {
 		});
 
 		// clean number parameters
-		$.each([ "minlength", "maxlength" ], function() {
+		$.each([ "minLength", "maxLength" ], function() {
 			if ( rules[ this ] && rules [ this ].rule) {
 				rules[ this ].rule = Number( rules[ this ].rule);
 			}
@@ -1137,13 +1179,13 @@ $.extend( $.validator, {
 				delete rules.min;
 				delete rules.max;
 			}
-			if ( rules.minlength != null && rules.maxlength != null && rules.minlength.validationType === rules.maxlength.validationType) {
+			if ( rules.minLength != null && rules.maxLength != null && rules.minLength.validationType === rules.maxLength.validationType) {
 				rules.rangelength = {
-					rule: [ rules.minlength.rule, rules.maxlength.rule ],
-					validationType: rules.maxlength.validationType
+					rule: [ rules.minLength.rule, rules.maxLength.rule ],
+					validationType: rules.maxLength.validationType
 				};
-				delete rules.minlength;
-				delete rules.maxlength;
+				delete rules.minLength;
+				delete rules.maxLength;
 			}
 		}
 
@@ -1201,13 +1243,18 @@ $.extend( $.validator, {
 			return $.trim( value ).length > 0;
 		},
 
-		// http://jqueryvalidation.org/email-method/
-		email: function( value, element ) {
-			// From https://html.spec.whatwg.org/multipage/forms.html#valid-e-mail-address
-			// Retrieved 2014-01-14
-			// If you have a problem with this implementation, report a bug against the above spec
-			// Or use custom methods to implement your own email validation
-			return this.optional( element ) || /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test( value );
+		//// http://jqueryvalidation.org/email-method/
+		//email: function( value, element ) {
+		//    // From https://html.spec.whatwg.org/multipage/forms.html#valid-e-mail-address
+		//    // Retrieved 2014-01-14
+		//    // If you have a problem with this implementation, report a bug against the above spec
+		//    // Or use custom methods to implement your own email validation
+		//    return this.optional( element ) || /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test( value );
+		//},
+
+		// disable build-in validation
+		email: function() {
+			return true;
 		},
 
 		// http://jqueryvalidation.org/url-method/
@@ -1232,13 +1279,13 @@ $.extend( $.validator, {
 		},
 
 		// http://jqueryvalidation.org/minlength-method/
-		minlength: function( value, element, param ) {
+		minLength: function( value, element, param ) {
 			var length = $.isArray( value ) ? value.length : this.getLength( value, element );
 			return this.optional( element ) || length >= param;
 		},
 
 		// http://jqueryvalidation.org/maxlength-method/
-		maxlength: function( value, element, param ) {
+		maxLength: function( value, element, param ) {
 			var length = $.isArray( value ) ? value.length : this.getLength( value, element );
 			return this.optional( element ) || length <= param;
 		},
@@ -1336,12 +1383,85 @@ $.extend( $.validator, {
 				}
 			}, param ) );
 			return "pending";
-		}
+		},
 
+		matchesInput: function( value, element, param ) {
+			return $.validator.methods.equalTo.call(this, value, element, param);
+		},
+
+        blacklist: function( value, element, param ) {
+            /**
+             * Remove surrounding slash characters '/' from string
+             *
+             * @param {String} pattern
+             * @return {String}
+             */
+            var removeSurroundingSlashes = function(pattern) {
+                var firstChar = pattern.substring(0, 1),
+                    lastChar = pattern.substring(pattern.length - 1);
+
+                if (firstChar === "/" && lastChar === "/") {
+                    pattern = pattern.substring(1, pattern.length - 1);
+                }
+
+                return pattern;
+                },
+                filterPattern = param.filterPattern,
+                i;
+
+            if (filterPattern) {
+                filterPattern = removeSurroundingSlashes(param.filterPattern);
+                value = value.replace(new RegExp(filterPattern, "g"), "");
+            }
+
+            for ( i = param.patterns.length; i--;) {
+                if (value.toLowerCase() === param.patterns[ i ].toLowerCase()) {
+                    return false;
+                }
+            }
+
+            return true;
+
+        },
+
+        /**
+         * Return true if the field value matches the given format RegExp
+         *
+         * @example $.validator.methods.pattern("AR1004",element,/^AR\d{4}$/)
+         * @result true
+         *
+         * @example $.validator.methods.pattern("BR1004",element,/^AR\d{4}$/)
+         * @result false
+         *
+         * @cat Plugins/Validate/Methods
+         */
+        pattern: function( value, element, param ) {
+            if (this.optional(element)) {
+                return true;
+            }
+
+            if (typeof param === "string") {
+                param = this.convertPhpRegExp(param);
+            }
+
+            return param.test(value);
+        },
+
+        blacklistPattern: function(value, element, param) {
+
+            for (var i = param.patterns.length; i--;) {
+
+                if (!this.isCorrectRexExp(param.patterns[ i ])) {
+                    continue;
+                }
+
+                if (this.convertPhpRegExp(param.patterns[ i ]).test(value)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 	}
 
 });
-
-$.format = function deprecated() {
-	throw "$.format has been deprecated. Please use $.validator.format instead.";
-};

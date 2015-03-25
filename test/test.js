@@ -441,13 +441,13 @@ test( "showErrors(), allow empty string and null as default message", function()
 		rules: {
 			username: {
 				required: true,
-				minlength: 3
+				minLength: 3
 			}
 		},
 		messages: {
 			username: {
 				required: "",
-				minlength: "too short"
+				minLength: "too short"
 			}
 		}
 	});
@@ -642,7 +642,7 @@ test( "formatAndAdd", function() {
 	var v = $( "#form" ).validate(),
 		fakeElement = { form: $( "#form" )[ 0 ], name: "bar" };
 
-	v.formatAndAdd( fakeElement, { method: "maxlength", parameters: 2 });
+	v.formatAndAdd( fakeElement, { method: "maxLength", parameters: 2 });
 	equal( "Please enter no more than 2 characters.", v.errorList[ 0 ].message );
 	equal( "bar", v.errorList[ 0 ].element.name );
 
@@ -694,7 +694,7 @@ asyncTest( "option invalidHandler", function() {
 			start();
 		}
 	});
-	$( "#usernamec" ).val( "asdf" ).rules( "add", { required: true, minlength: 5 });
+	$( "#usernamec" ).val( "asdf" ).rules( "add", { required: true, minLength: 5 });
 	$( "#testForm1clean" ).submit();
 });
 
@@ -993,7 +993,7 @@ test( "successlist", function() {
 
 test( "success isn't called for optional elements with no other rules", function() {
 	expect( 4 );
-	equal( "", $( "#firstname" ).removeAttr( "data-rule-required" ).removeAttr( "data-rule-minlength" ).val() );
+	equal( "", $( "#firstname" ).removeAttr( "data-rule-required" ).removeAttr( "data-rule-minLength" ).val() );
 	$( "#something" ).remove();
 	$( "#lastname" ).remove();
 	$( "#errorFirstname" ).remove();
@@ -1049,7 +1049,7 @@ test( "success callback with element", function() {
 
 test( "all rules are evaluated even if one returns a dependency-mistmatch", function() {
 	expect( 6 );
-	equal( "", $( "#firstname" ).removeAttr( "data-rule-required" ).removeAttr( "data-rule-minlength" ).val() );
+	equal( "", $( "#firstname" ).removeAttr( "data-rule-required" ).removeAttr( "data-rule-minLength" ).val() );
 	$( "#lastname" ).remove();
 	$( "#errorFirstname" ).remove();
 	$.validator.addMethod( "custom1", function() {
@@ -1076,8 +1076,8 @@ test( "all rules are evaluated even if one returns a dependency-mistmatch", func
 
 test( "messages", function() {
 	var m = jQuery.validator.messages;
-	equal( "Please enter no more than 0 characters.", m.maxlength( 0 ) );
-	equal( "Please enter at least 1 characters.", m.minlength( 1 ) );
+	equal( "Please enter no more than 0 characters.", m.maxLength( 0 ) );
+	equal( "Please enter at least 1 characters.", m.minLength( 1 ) );
 	equal( "Please enter a value between 1 and 2 characters long.", m.rangelength( [ 1, 2 ] ) );
 	equal( "Please enter a value less than or equal to 1.", m.max( 1 ) );
 	equal( "Please enter a value greater than or equal to 0.", m.min( 0 ) );
@@ -1181,7 +1181,7 @@ test( "validate on blur", function() {
 	labels( 0 );
 	e.val( "h" );
 	blur( e );
-	errors( 1, "Required was ignored, but as something was entered, check other rules, minlength isn't met" );
+	errors( 1, "Required was ignored, but as something was entered, check other rules, minLength isn't met" );
 	labels( 1 );
 	e.val( "hh" );
 	blur( e );
@@ -1196,11 +1196,11 @@ test( "validate on blur", function() {
 	labels( 3 );
 	e.val( "h" );
 	blur( e );
-	errors( 1, "Entering a single character fulfills required, but not minlength: 2, still invalid" );
+	errors( 1, "Entering a single character fulfills required, but not minLength: 2, still invalid" );
 	labels( 3 );
 	e.val( "hh" );
 	blur( e );
-	errors( 0, "Both required and minlength are met, no errors left" );
+	errors( 0, "Both required and minLength are met, no errors left" );
 	labels( 2 );
 });
 
@@ -1377,7 +1377,7 @@ test( "validate multiple checkbox on click", function() {
 			rules: {
 				check: {
 					required: true,
-					minlength: 2
+					minLength: 2
 				}
 			}
 		});
@@ -1408,7 +1408,7 @@ test( "correct checkbox receives the error", function() {
 		rules: {
 			check: {
 				required: true,
-				minlength: 2
+				minLength: 2
 			}
 		}
 	});
