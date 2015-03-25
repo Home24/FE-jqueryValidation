@@ -651,10 +651,14 @@ $.extend( $.validator, {
 				result, method, rule;
 
 			for ( method in rules ) {
-				rule = { method: method, validationType: rules[ method ].validationType || "error", parameters: rules[ method ].rule };
+				rule = {
+                    method: rules[ method ].validationMethod || method,
+                    validationType: rules[ method ].validationType || "error",
+                    parameters: rules[ method ].rule
+                };
 				try {
 
-					result = $.validator.methods[ method ].call( this, val, element, rule.parameters );
+					result = $.validator.methods[ rule.method ].call( this, val, element, rule.parameters );
 
 					// if a method indicates that the field is optional and therefore valid,
 					// don't mark it as valid when there are no other rules
@@ -706,9 +710,9 @@ $.extend( $.validator, {
 		},
 
 		// return the custom message for the given element name and validation method
-		customMessage: function( name, method ) {
+		customMessage: function( name, method, validationType ) {
 			var m = this.settings.messages[ name ];
-			return m && ( m.constructor === String ? m : m[ method ]);
+			return m && ( m.constructor === String ? m : validationType && m[ validationType + "." + method ] ? m[ validationType + "." + method ] : m[ method ]);
 		},
 
 		// return the first defined argument, allowing empty strings
@@ -721,19 +725,20 @@ $.extend( $.validator, {
 			return undefined;
 		},
 
-		defaultMessage: function( element, method ) {
+		defaultMessage: function( element, method, validationType ) {
 			return this.findDefined(
-				this.customMessage( element.name, method ),
+				this.customMessage( element.name, method, validationType ),
 				this.customDataMessage( element, method ),
 				// title is never undefined, so handle empty string as undefined
 				!this.settings.ignoreTitle && element.title || undefined,
+                validationType && $.validator.messages[ validationType + "." + method ] || undefined,
 				$.validator.messages[ method ],
 				"<strong>Warning: No message defined for " + element.name + "</strong>"
 			);
 		},
 
 		formatAndAdd: function( element, rule ) {
-			var message = this.defaultMessage( element, rule.method ),
+			var message = this.defaultMessage( element, rule.method, rule.validationType ),
 				theregex = /\$?\{(\d+)\}/g;
 			if ( typeof message === "function" ) {
 				message = message.call( this, rule.parameters, element );
