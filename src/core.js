@@ -142,9 +142,12 @@ $.extend($.fn, {
 				}
 				filtered = {};
 				$.each( argument.split( /\s/ ), function( index, method ) {
+					if (method.indexOf(".") === -1) {
+						method = "error." + method;
+					}
 					filtered[ method ] = existingRules[ method ];
 					delete existingRules[ method ];
-					if ( method === "required" ) {
+					if ( method === "error.required" ) {
 						$( element ).removeAttr( "aria-required" );
 					}
 				});
@@ -162,18 +165,18 @@ $.extend($.fn, {
 		), element );
 
 		// make sure required is at front
-		if ( data.required ) {
-			param = data.required;
-			delete data.required;
-			data = $.extend( { required: param }, data );
+		if ( data[ "error.required" ] ) {
+			param = data[ "error.required" ];
+			delete data[ "error.required" ];
+			data = $.extend( { "error.required": param }, data );
 			$( element ).attr( "aria-required", "true" );
 		}
 
 		// make sure remote is at back
-		if ( data.remote ) {
-			param = data.remote;
-			delete data.remote;
-			data = $.extend( data, { remote: param });
+		if ( data[ "error.remote" ] ) {
+			param = data[ "error.remote" ];
+			delete data[ "error.remote" ];
+			data = $.extend( data, { "error.remote": param });
 		}
 
 		return data;
@@ -324,16 +327,16 @@ $.extend( $.validator, {
 		number: "Please enter a valid number.",
 		digits: "Please enter only digits.",
 		equalTo: "Please enter the same value again.",
-        matchesInput: "Please enter the same value again.",
+		matchesInput: "Please enter the same value again.",
 		maxLength: $.validator.format( "Please enter no more than {0} characters." ),
 		minLength: $.validator.format( "Please enter at least {0} characters." ),
 		rangelength: $.validator.format( "Please enter a value between {0} and {1} characters long." ),
 		range: $.validator.format( "Please enter a value between {0} and {1}." ),
 		max: $.validator.format( "Please enter a value less than or equal to {0}." ),
 		min: $.validator.format( "Please enter a value greater than or equal to {0}." ),
-        blacklist: $.validator.format( "Please select a different address." ),
-        pattern: $.validator.format( "Invalid format." ),
-        blacklistPattern: $.validator.format( "Please select a different address." )
+		blacklist: $.validator.format( "Please select a different address." ),
+		pattern: $.validator.format( "Invalid format." ),
+		blacklistPattern: $.validator.format( "Please select a different address." )
 	},
 
 	autoCreateRanges: false,
@@ -652,10 +655,10 @@ $.extend( $.validator, {
 
 			for ( method in rules ) {
 				rule = {
-                    method: rules[ method ].validationMethod || method,
-                    validationType: rules[ method ].validationType || "error",
-                    parameters: rules[ method ].rule
-                };
+					method: rules[ method ].validationMethod || method,
+					validationType: rules[ method ].validationType || "error",
+					parameters: rules[ method ].rule
+				};
 				try {
 
 					result = $.validator.methods[ rule.method ].call( this, val, element, rule.parameters );
@@ -731,7 +734,7 @@ $.extend( $.validator, {
 				this.customDataMessage( element, method ),
 				// title is never undefined, so handle empty string as undefined
 				!this.settings.ignoreTitle && element.title || undefined,
-                validationType && $.validator.messages[ validationType + "." + method ] || undefined,
+				validationType && $.validator.messages[ validationType + "." + method ] || undefined,
 				$.validator.messages[ method ],
 				"<strong>Warning: No message defined for " + element.name + "</strong>"
 			);
@@ -985,44 +988,59 @@ $.extend( $.validator, {
 			});
 		},
 
-        isCorrectRexExp: function(pattern) {
-            var myPattern = pattern.split("/"),
-                myRegexOptions;
-            myPattern.shift();
-            myRegexOptions = myPattern.pop();
+		isCorrectRexExp: function(pattern) {
+			var myPattern = pattern.split("/"),
+				myRegexOptions;
+			myPattern.shift();
+			myRegexOptions = myPattern.pop();
 
-            return myRegexOptions !== "u";
-        },
+			return myRegexOptions !== "u";
+		},
 
-        /**
-         * Convert php regex string to js regex Object
-         *
-         * @param {String} pString
-         * @return {String}
-         */
-        convertPhpRegExp: function(pString) {
-            var myRegEx, myPattern, myRegexOptions;
+		/**
+		 * Convert php regex string to js regex Object
+		 *
+		 * @param {String} pString
+		 * @return {String}
+		 */
+		convertPhpRegExp: function(pString) {
+			var myRegEx, myPattern, myRegexOptions;
 
-            if (pString.constructor === RegExp) {
-                return pString;
-            }
-            myPattern = pString.split("/");
-            myPattern.shift(); // cutoff first empty string
-            myRegexOptions = myPattern.pop(); // last array entry = options
-            myPattern = myPattern.join("/"); // reassemble regex string
+			if (pString.constructor === RegExp) {
+				return pString;
+			}
+			myPattern = pString.split("/");
+			myPattern.shift(); // cutoff first empty string
+			myRegexOptions = myPattern.pop(); // last array entry = options
+			myPattern = myPattern.join("/"); // reassemble regex string
 
-            if (myRegexOptions === "u") {
-                myRegexOptions = null;
-            }
+			if (myRegexOptions === "u") {
+				myRegexOptions = null;
+			}
 
-            try { // catch misformed regex pattern
-                myRegEx = myRegexOptions && myRegexOptions.length > 0 ? (new RegExp(myPattern, myRegexOptions)) : (new RegExp(myPattern));
-            } catch (e) {
-                myRegEx = new RegExp(".*"); // always returns true
-            }
+			try { // catch misformed regex pattern
+				myRegEx = myRegexOptions && myRegexOptions.length > 0 ? (new RegExp(myPattern, myRegexOptions)) : (new RegExp(myPattern));
+			} catch (e) {
+				myRegEx = new RegExp(".*"); // always returns true
+			}
 
-            return myRegEx; // return regex
-        }
+			return myRegEx; // return regex
+		},
+
+		/**
+		 * @param {Object} obj
+		 * @param {string} filter
+		 * @returns {Array}
+		 */
+		getMatchedKey: function(obj, filter) {
+			var key, keys = [];
+			for (key in obj) {
+				if (obj.hasOwnProperty(key) && filter.test(key)) {
+					keys.push(key);
+				}
+			}
+			return keys;
+		}
 	},
 
 	classRuleSettings: {
@@ -1158,39 +1176,48 @@ $.extend( $.validator, {
 
 		// clean number parameters
 		$.each([ "minLength", "maxLength" ], function() {
-			if ( rules[ this ] && rules [ this ].rule) {
-				rules[ this ].rule = Number( rules[ this ].rule);
+			var rule = $.validator.prototype.getMatchedKey(rules, new RegExp(this));
+			if ( rule.length && rules [ rule[ 0 ] ].rule) {
+				rules[ rule[ 0 ] ].rule = Number( rules[ rule[ 0 ] ].rule);
 			}
 		});
 		$.each([ "rangelength", "range" ], function() {
-			var parts;
-			if ( rules[ this ] && rules [ this ].rule) {
-				if ( $.isArray( rules[ this ].rule ) ) {
-					rules[ this ].rule = [ Number( rules[ this ].rule[ 0 ]), Number( rules[ this ].rule[ 1 ] ) ];
-				} else if ( typeof rules[ this ].rule === "string" ) {
-					parts = rules[ this ].rule.replace(/[\[\]]/g, "" ).split( /[\s,]+/ );
-					rules[ this ].rule = [ Number( parts[ 0 ]), Number( parts[ 1 ] ) ];
+			var parts,
+				rule = $.validator.prototype.getMatchedKey(rules, new RegExp( this ));
+			if ( rule.length && rules [ rule[ 0 ] ].rule) {
+				if ( $.isArray( rules[ rule[ 0 ] ].rule ) ) {
+					rules[ rule[ 0 ] ].rule = [ Number( rules[ rule[ 0 ] ].rule[ 0 ]), Number( rules[ rule[ 0 ] ].rule[ 1 ] ) ];
+				} else if ( typeof rules[ rule[ 0 ] ].rule === "string" ) {
+					parts = rules[ rule[ 0 ] ].rule.replace(/[\[\]]/g, "" ).split( /[\s,]+/ );
+					rules[ rule[ 0 ] ].rule = [ Number( parts[ 0 ]), Number( parts[ 1 ] ) ];
 				}
 			}
 		});
 
 		if ( $.validator.autoCreateRanges ) {
 			// auto-create ranges
-			if ( rules.min != null && rules.max != null && rules.min.validationType === rules.max.validationType) {
-				rules.range = {
-					rule: [ rules.min.rule, rules.max.rule ],
-					validationType: rules.max.validationType
+			var min = $.validator.prototype.getMatchedKey(rules, new RegExp( "min$" )),
+				max = $.validator.prototype.getMatchedKey(rules, new RegExp( "max$" )),
+				minLength = $.validator.prototype.getMatchedKey(rules, new RegExp( "minLength$" )),
+				maxLength = $.validator.prototype.getMatchedKey(rules, new RegExp( "maxLength$" ));
+
+			if ( min.length && max.length && rules[ min[ 0 ] ].validationType === rules[ max [ 0 ] ].validationType) {
+				rules[ max [ 0 ].split(".")[ 0 ] + ".range" ] = {
+					rule: [ rules[ min[ 0 ] ].rule, rules[ max [ 0 ] ].rule ],
+					validationType: rules[ max [ 0 ] ].validationType,
+					validationMethod: "range"
 				};
-				delete rules.min;
-				delete rules.max;
+				delete rules[ min [ 0 ] ];
+				delete rules[ max [ 0 ] ];
 			}
-			if ( rules.minLength != null && rules.maxLength != null && rules.minLength.validationType === rules.maxLength.validationType) {
-				rules.rangelength = {
-					rule: [ rules.minLength.rule, rules.maxLength.rule ],
-					validationType: rules.maxLength.validationType
+			if ( minLength.length && maxLength.length && rules[ minLength[ 0 ] ].validationType === rules[ maxLength[ 0 ] ].validationType) {
+				rules[ maxLength [ 0 ].split(".")[ 0 ] + ".rangelength" ] = {
+					rule: [ rules[ minLength[ 0 ] ].rule, rules[ maxLength[ 0 ] ].rule ],
+					validationType: rules[ maxLength[ 0 ] ].validationType,
+					validationMethod: "rangelength"
 				};
-				delete rules.minLength;
-				delete rules.maxLength;
+				delete rules[ minLength[ 0 ] ];
+				delete rules[ maxLength[ 0 ] ];
 			}
 		}
 
@@ -1199,8 +1226,9 @@ $.extend( $.validator, {
 
 	// Converts a simple string to a {string: true} rule, e.g., "required" to {required:true}
 	normalizeRule: function( data ) {
+		var transformed;
 		if ( typeof data === "string" ) {
-			var transformed = {};
+			transformed = {};
 			$.each( data.split( /\s/ ), function() {
 				transformed[ this ] = true;
 			});
@@ -1209,11 +1237,20 @@ $.extend( $.validator, {
 
 		if ( typeof data !== "undefined") {
 			$.each(data, function(rule, value) {
-				if (typeof value.rule === "undefined" && typeof value.validationType === "undefined" && value.messages !== "undefined") {
-					data[ rule ] = {
-						rule: value,
-						validationType: "error"
-					};
+				if ( rule !== "messages" ) {
+					delete data [ rule ];
+					if (typeof value.rule === "undefined" && typeof value.validationType === "undefined" && value.messages !== "undefined") {
+						data[ "error." + rule ] = {
+							rule: value,
+							validationType: "error",
+							validationMethod: rule
+						};
+					} else {
+						value.validationType = value.validationType || "error";
+						value.validationMethod = value.validationMethod || rule;
+
+						data[ value.validationType + "." + value.validationMethod ] = value;
+					}
 				}
 			});
 		}
@@ -1394,79 +1431,79 @@ $.extend( $.validator, {
 			return $.validator.methods.equalTo.call(this, value, element, param);
 		},
 
-        blacklist: function( value, element, param ) {
-            /**
-             * Remove surrounding slash characters '/' from string
-             *
-             * @param {String} pattern
-             * @return {String}
-             */
-            var removeSurroundingSlashes = function(pattern) {
-                var firstChar = pattern.substring(0, 1),
-                    lastChar = pattern.substring(pattern.length - 1);
+		blacklist: function( value, element, param ) {
+			/**
+			 * Remove surrounding slash characters '/' from string
+			 *
+			 * @param {String} pattern
+			 * @return {String}
+			 */
+			var removeSurroundingSlashes = function(pattern) {
+				var firstChar = pattern.substring(0, 1),
+					lastChar = pattern.substring(pattern.length - 1);
 
-                if (firstChar === "/" && lastChar === "/") {
-                    pattern = pattern.substring(1, pattern.length - 1);
-                }
+				if (firstChar === "/" && lastChar === "/") {
+					pattern = pattern.substring(1, pattern.length - 1);
+				}
 
-                return pattern;
-                },
-                filterPattern = param.filterPattern,
-                i;
+				return pattern;
+				},
+				filterPattern = param.filterPattern,
+				i;
 
-            if (filterPattern) {
-                filterPattern = removeSurroundingSlashes(param.filterPattern);
-                value = value.replace(new RegExp(filterPattern, "g"), "");
-            }
+			if (filterPattern) {
+				filterPattern = removeSurroundingSlashes(param.filterPattern);
+				value = value.replace(new RegExp(filterPattern, "g"), "");
+			}
 
-            for ( i = param.patterns.length; i--;) {
-                if (value.toLowerCase() === param.patterns[ i ].toLowerCase()) {
-                    return false;
-                }
-            }
+			for ( i = param.patterns.length; i--;) {
+				if (value.toLowerCase() === param.patterns[ i ].toLowerCase()) {
+					return false;
+				}
+			}
 
-            return true;
+			return true;
 
-        },
+		},
 
-        /**
-         * Return true if the field value matches the given format RegExp
-         *
-         * @example $.validator.methods.pattern("AR1004",element,/^AR\d{4}$/)
-         * @result true
-         *
-         * @example $.validator.methods.pattern("BR1004",element,/^AR\d{4}$/)
-         * @result false
-         *
-         * @cat Plugins/Validate/Methods
-         */
-        pattern: function( value, element, param ) {
-            if (this.optional(element)) {
-                return true;
-            }
+		/**
+		 * Return true if the field value matches the given format RegExp
+		 *
+		 * @example $.validator.methods.pattern("AR1004",element,/^AR\d{4}$/)
+		 * @result true
+		 *
+		 * @example $.validator.methods.pattern("BR1004",element,/^AR\d{4}$/)
+		 * @result false
+		 *
+		 * @cat Plugins/Validate/Methods
+		 */
+		pattern: function( value, element, param ) {
+			if (this.optional(element)) {
+				return true;
+			}
 
-            if (typeof param === "string") {
-                param = this.convertPhpRegExp(param);
-            }
+			if (typeof param === "string") {
+				param = this.convertPhpRegExp(param);
+			}
 
-            return param.test(value);
-        },
+			return param.test(value);
+		},
 
-        blacklistPattern: function(value, element, param) {
+		blacklistPattern: function(value, element, param) {
 
-            for (var i = param.patterns.length; i--;) {
+			for (var i = param.patterns.length; i--;) {
 
-                if (!this.isCorrectRexExp(param.patterns[ i ])) {
-                    continue;
-                }
+				if (!this.isCorrectRexExp(param.patterns[ i ])) {
+					continue;
+				}
 
-                if (this.convertPhpRegExp(param.patterns[ i ]).test(value)) {
-                    return false;
-                }
-            }
+				if (this.convertPhpRegExp(param.patterns[ i ]).test(value)) {
+					return false;
+				}
+			}
 
-            return true;
-        }
+			return true;
+		}
 	}
 
 });
