@@ -1,5 +1,5 @@
 /*!
- * jQuery Validation Plugin v1.13.2-pre-home24-0.1.3
+ * jQuery Validation Plugin v2.0.0
  *
  * http://jqueryvalidation.org/
  *
@@ -414,7 +414,9 @@ $.extend( $.validator, {
 					"focusin focusout keyup", delegate)
 				// Support: Chrome, oldIE
 				// "select" is provided as event.target when clicking a option
-				.validateDelegate("select, option, [type='radio'], [type='checkbox']", "click", delegate);
+				.validateDelegate("select, option, [type='radio'], [type='checkbox']", "click", delegate)
+
+				.validateDelegate("select", "change", delegate);
 
 			if ( this.settings.invalidHandler ) {
 				$( this.currentForm ).bind( "invalid-form.validate", this.settings.invalidHandler );

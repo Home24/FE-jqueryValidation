@@ -1,5 +1,5 @@
 /*!
- * jQuery Validation Plugin v1.13.2-pre-home24-0.1.3
+ * jQuery Validation Plugin v2.0.0
  *
  * http://jqueryvalidation.org/
  *
