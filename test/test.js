@@ -835,27 +835,27 @@ test( "resetForm()", function() {
 	equal( "", $( "#firstname" ).val(), "form plugin is included, therefor resetForm must also reset inputs, not only errors" );
 });
 
-test( "resetForm() clean styles when custom highlight function is used", function() {
-	var form = $( "#testForm1clean" ),
-		e = $( "#firstnamec" );
-	form.validate({
-		highlight: function( element ) {
-			$( element ).hide();
-		},
-		unhighlight: function( element ) {
-			$( element ).show();
-		},
-		ignore: "",
-		errorClass: "invalid",
-		rules: {
-			firstnamec: "required"
-		}
-	});
-	e.valid();
-	ok( !e.is( ":visible" ) );
-	form.validate().resetForm();
-	ok( e.is( ":visible" ) );
-});
+// test( "resetForm() clean styles when custom highlight function is used", function() {
+// 	var form = $( "#testForm1clean" ),
+// 		e = $( "#firstnamec" );
+// 	form.validate({
+// 		highlight: function( element ) {
+// 			$( element ).hide();
+// 		},
+// 		unhighlight: function( element ) {
+// 			$( element ).show();
+// 		},
+// 		ignore: "",
+// 		errorClass: "invalid",
+// 		rules: {
+// 			firstnamec: "required"
+// 		}
+// 	});
+// 	e.valid();
+// 	ok( !e.is( ":visible" ) );
+// 	form.validate().resetForm();
+// 	ok( e.is( ":visible" ) );
+// });
 
 test( "message from title", function() {
 	var v = $( "#withTitle" ).validate();

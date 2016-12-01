@@ -1,9 +1,9 @@
 /*!
- * jQuery Validation Plugin v2.0.0
+ * jQuery Validation Plugin v2.0.2
  *
  * http://jqueryvalidation.org/
  *
- * Copyright (c) 2015 Jörn Zaefferer
+ * Copyright (c) 2016 Jörn Zaefferer
  * Released under the MIT license
  */
 (function( factory ) {
@@ -591,7 +591,7 @@ $.extend( $.validator, {
 			// select all valid inputs inside the form (no submit or reset buttons)
 			return $( this.currentForm )
 			.find( "input, select, textarea" )
-			.not( ":submit, :reset, :image, [disabled]" )
+			.not( ":hidden, :submit, :reset, :image, [disabled]" )
 			.not( this.settings.ignore )
 			.filter( function() {
 				if ( !this.name && validator.settings.debug && window.console ) {

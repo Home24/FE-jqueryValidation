@@ -1,9 +1,9 @@
 /*!
- * jQuery Validation Plugin v2.0.0
+ * jQuery Validation Plugin v2.0.2
  *
  * http://jqueryvalidation.org/
  *
- * Copyright (c) 2015 Jörn Zaefferer
+ * Copyright (c) 2016 Jörn Zaefferer
  * Released under the MIT license
  */
 (function( factory ) {
