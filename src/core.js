@@ -820,9 +820,21 @@ $.extend( $.validator, {
 			var place, group, errorID,
 				error = this.errorsFor( element ),
 				elementID = this.idOrName( element ),
-				describedBy = $( element ).attr( "aria-describedby" );
+				describedBy = $( element ).attr( "aria-describedby" ),
+				settingsErrorClass = this.settings.errorClass,
+				allErrorClasses = [];
+
+			// Error class can be an object as well
+			// Eg; { error: 'error-message', warning: 'warning-message' }
+			if (typeof settingsErrorClass !== 'string') {
+				allErrorClasses = Object.keys(settingsErrorClass).map(function(type) {
+					return settingsErrorClass[type];
+				});
+			}
+				
 			if ( error.length ) {
 				// refresh error/success class
+				error.removeClass( allErrorClasses.join(' ') );
 				error.removeClass( validClass ).addClass( errorClass );
 				// replace message on existing label
 				error.html( message );
