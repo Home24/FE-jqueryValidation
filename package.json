@@ -2,7 +2,7 @@
   "name": "home24-jquery-validation",
   "title": "jQuery Validation Plugin",
   "description": "Client-side form validation made easy",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "homepage": "http://jqueryvalidation.org/",
   "author": {
     "name": "Jörn Zaefferer",
