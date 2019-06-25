@@ -1,5 +1,5 @@
 /*!
- * jQuery Validation Plugin v2.0.3
+ * jQuery Validation Plugin v2.0.4
  *
  * http://jqueryvalidation.org/
  *
@@ -842,15 +842,15 @@ $.extend( $.validator, {
 
 			// Error class can be an object as well
 			// Eg; { error: 'error-message', warning: 'warning-message' }
-			if (typeof settingsErrorClass !== 'string') {
+			if (typeof settingsErrorClass !== "string") {
 				allErrorClasses = Object.keys(settingsErrorClass).map(function(type) {
 					return settingsErrorClass[type];
 				});
 			}
-				
+
 			if ( error.length ) {
 				// refresh error/success class
-				error.removeClass( allErrorClasses.join(' ') );
+				error.removeClass( allErrorClasses.join(" ") );
 				error.removeClass( validClass ).addClass( errorClass );
 				// replace message on existing label
 				error.html( message );
@@ -1439,6 +1439,7 @@ $.extend( $.validator, {
 					if ( valid ) {
 						submitted = validator.formSubmitted;
 						validator.prepareElement( element );
+						validator.currentElements = $( element );
 						validator.formSubmitted = submitted;
 						validator.successList.push( element );
 						delete validator.invalid[ element.name ];
