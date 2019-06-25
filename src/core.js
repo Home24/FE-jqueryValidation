@@ -1423,6 +1423,7 @@ $.extend( $.validator, {
 					if ( valid ) {
 						submitted = validator.formSubmitted;
 						validator.prepareElement( element );
+						validator.currentElements = $( element );
 						validator.formSubmitted = submitted;
 						validator.successList.push( element );
 						delete validator.invalid[ element.name ];
