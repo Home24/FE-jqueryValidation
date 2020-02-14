@@ -294,6 +294,166 @@ asyncTest("remote", function() {
 	strictEqual( v.element(e), true, "still invalid, because remote validation must block until it returns; dependency-mismatch considered as valid though" );
 });
 
+asyncTest("remote success", function() {
+	expect(3);
+
+	var e = $("#username"),
+		v = $("#userForm").validate({
+			rules: {
+				username: {
+					required: true,
+					remote: "valid.php"
+				}
+			},
+			messages: {
+				username: {
+					required: "Please",
+					remote: jQuery.validator.format("{0} in use")
+				}
+			},
+			submitHandler: function() {
+				ok( false, "submitHandler may never be called when validating only elements");
+			}
+		});
+
+	$(document).ajaxStop(function() {
+		$(document).unbind("ajaxStop");
+		strictEqual( v.element(e), true );
+		start();
+	});
+	strictEqual( v.element(e), false);
+	e.val("Peter");
+	strictEqual( v.element(e), true);
+});
+
+asyncTest("remote failure", function() {
+	expect(3);
+
+	var e = $("#username"),
+		v = $("#userForm").validate({
+			rules: {
+				username: {
+					required: true,
+					remote: "users2.php"
+				}
+			},
+			messages: {
+				username: {
+					required: "Please",
+					remote: jQuery.validator.format("{0} in use")
+				}
+			},
+			submitHandler: function() {
+				ok( false, "submitHandler may never be called when validating only elements");
+			}
+		});
+
+	$(document).ajaxStop(function() {
+		$(document).unbind("ajaxStop");
+		strictEqual( v.element(e), false );
+		start();
+	});
+	strictEqual( v.element(e), false);
+	e.val("Peter");
+	strictEqual( v.element(e), true);
+});
+
+asyncTest("remote 5xx error", function() {
+	expect(3);
+
+	var e = $("#username"),
+		v = $("#userForm").validate({
+			rules: {
+				username: {
+					required: true,
+					remote: "error5xx.php"
+				}
+			},
+			messages: {
+				username: {
+					required: "Please",
+					remote: jQuery.validator.format("{0} in use")
+				}
+			},
+			submitHandler: function() {
+				ok( false, "submitHandler may never be called when validating only elements");
+			}
+		});
+
+	$(document).ajaxStop(function() {
+		$(document).unbind("ajaxStop");
+		strictEqual( v.element(e), true );
+		start();
+	});
+	strictEqual( v.element(e), false);
+	e.val("Peter");
+	strictEqual( v.element(e), true);
+});
+
+asyncTest("remote 4xx error", function() {
+	expect(3);
+
+	var e = $("#username"),
+		v = $("#userForm").validate({
+			rules: {
+				username: {
+					required: true,
+					remote: "error4xx.php"
+				}
+			},
+			messages: {
+				username: {
+					required: "Please",
+					remote: jQuery.validator.format("{0} in use")
+				}
+			},
+			submitHandler: function() {
+				ok( false, "submitHandler may never be called when validating only elements");
+			}
+		});
+
+	$(document).ajaxStop(function() {
+		$(document).unbind("ajaxStop");
+		strictEqual( v.element(e), false );
+		start();
+	});
+	strictEqual( v.element(e), false);
+	e.val("Peter");
+	strictEqual( v.element(e), true);
+});
+
+asyncTest("remote timeout", function() {
+	expect(3);
+
+	var e = $("#username"),
+		v = $("#userForm").validate({
+			rules: {
+				username: {
+					required: true,
+					remote: "timeout.php"
+				}
+			},
+			messages: {
+				username: {
+					required: "Please",
+					remote: jQuery.validator.format("{0} in use")
+				}
+			},
+			submitHandler: function() {
+				ok( false, "submitHandler may never be called when validating only elements");
+			}
+		});
+
+	$(document).ajaxStop(function() {
+		$(document).unbind("ajaxStop");
+		strictEqual( v.element(e), true );
+		start();
+	});
+	strictEqual( v.element(e), false);
+	e.val("Peter");
+	strictEqual( v.element(e), true);
+});
+
 asyncTest("remote, customized ajax options", function() {
 	expect(2);
 	$("#userForm").validate({

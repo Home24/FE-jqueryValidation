@@ -7,7 +7,6 @@ $.mockjaxSettings.log = $.noop;
 $.mockjax({
 	url: "form.php?user=Peter&password=foobar",
 	responseText: "Hi Peter, welcome back.",
-	responseStatus: 200,
 	responseTime: 1
 });
 
@@ -17,7 +16,6 @@ $.mockjax({
 		username: /Peter2?|asdf/
 	},
 	responseText: { valid: false },
-	responseStatus: 200,
 	responseTime: 1
 });
 
@@ -27,7 +25,33 @@ $.mockjax({
 		username: "asdf"
 	},
 	responseText: { valid: false, message: "asdf is already taken, please try something else" },
-	responseStatus: 200,
+	responseTime: 1
+});
+
+$.mockjax({
+	url: "valid.php",
+	data: {
+		username: /Peter2?|asdf/
+	},
+	responseText: { valid: true },
+	responseTime: 1
+});
+
+$.mockjax({
+	url: "timeout.php",
+	responseText: {},
+	isTimeout: true
+});
+
+$.mockjax({
+	url: "error5xx.php",
+	status: 503,
+	responseTime: 1
+});
+
+$.mockjax({
+	url: "error4xx.php",
+	status: 401,
 	responseTime: 1
 });
 

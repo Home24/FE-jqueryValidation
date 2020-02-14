@@ -1387,7 +1387,7 @@ $.extend( $.validator, {
 			}
 
 			var previous = this.previousValue( element ),
-				validator, data;
+				validator, data, markFieldInvalid, markFieldValid, validateField;
 
 			if (!this.settings.messages[ element.name ] ) {
 				this.settings.messages[ element.name ] = {};
@@ -1408,6 +1408,48 @@ $.extend( $.validator, {
 			if (!param.data) {
 				data[ element.name ] = value;
 			}
+
+			markFieldInvalid = function(errorMessage) {
+				var message,
+					errors = {};
+
+				validator.settings.messages[ element.name ].remote = previous.originalMessage;
+
+				message = errorMessage || validator.defaultMessage( element, "remote" );
+
+				errors[ element.name ] = previous.message = $.isFunction( message ) ? message( value ) : message;
+				validator.invalid[ element.name ] = true;
+				validator.showErrors( errors );
+
+				previous.valid = false;
+				validator.stopRequest( element, false );
+			};
+
+			markFieldValid = function() {
+				var submitted;
+
+				validator.settings.messages[ element.name ].remote = previous.originalMessage;
+
+				submitted = validator.formSubmitted;
+				validator.prepareElement( element );
+				validator.currentElements = $( element );
+				validator.formSubmitted = submitted;
+				validator.successList.push( element );
+				delete validator.invalid[ element.name ];
+				validator.showErrors();
+
+				previous.valid = true;
+				validator.stopRequest( element, true );
+			};
+
+			validateField = function(isValid, message) {
+				if ( isValid ) {
+					markFieldValid();
+				} else {
+					markFieldInvalid(message);
+				}
+			};
+
 			$.ajax( $.extend( true, {
 				url: param,
 				mode: "abort",
@@ -1416,27 +1458,15 @@ $.extend( $.validator, {
 				data: data,
 				context: validator.currentForm,
 				success: function( response ) {
-					var valid = response.valid === true,
-						errors, message, submitted;
+					validateField(response.valid, response.message);
+				},
+				error: function(jqXHR, textStatus ) {
+					// For slow internet connection (timeouts) or problems with validation service
+					// (5xx http codes), mark field as valid.
+					// If field cannot be validated we need to allow user to submit the form.
+					var shouldBeMarkedAsValid = textStatus === "timeout" || jqXHR.status >= 500 || jqXHR.status === 0;
 
-					validator.settings.messages[ element.name ].remote = previous.originalMessage;
-					if ( valid ) {
-						submitted = validator.formSubmitted;
-						validator.prepareElement( element );
-						validator.currentElements = $( element );
-						validator.formSubmitted = submitted;
-						validator.successList.push( element );
-						delete validator.invalid[ element.name ];
-						validator.showErrors();
-					} else {
-						errors = {};
-						message = response.message || validator.defaultMessage( element, "remote" );
-						errors[ element.name ] = previous.message = $.isFunction( message ) ? message( value ) : message;
-						validator.invalid[ element.name ] = true;
-						validator.showErrors( errors );
-					}
-					previous.valid = valid;
-					validator.stopRequest( element, valid );
+					validateField(shouldBeMarkedAsValid, textStatus);
 				}
 			}, param ) );
 			return "pending";
